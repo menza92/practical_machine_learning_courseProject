@@ -1,0 +1,166 @@
+---
+title: "Prediction of Excercise Quality"
+author: "A. C. Dennerley"
+date: "February 25, 2016"
+output: 
+  html_document:
+    keep_md: true
+---
+
+```{r importPackages,echo=FALSE,results='hide',message=FALSE,warning=FALSE}
+library(doParallel)
+library(e1071)
+library(foreach)
+library(rpart)
+library(randomForest)
+library(data.table)
+library(caret)
+```
+
+The data set has been generously provided by it's researchers.  More information on the data is available <a href="http://groupware.les.inf.puc-rio.br/har">here</a>.  
+
+Velloso, E.; Bulling, A.; Gellersen, H.; Ugulino, W.; Fuks, H. <a href="http://groupware.les.inf.puc-rio.br/work.jsf?p1=11201">Qualitative Activity Recognition of Weight Lifting Exercises</a>. Proceedings of 4th International Conference in Cooperation with SIGCHI (Augmented Human '13) . Stuttgart, Germany: ACM SIGCHI, 2013. 
+
+###Data Processing
+
+Loading data files
+
+```{r readingFiles,echo=TRUE,results='hide'}
+dat.build <- if(file.exists('train.csv')) {
+  fread('train.csv', na.strings=c("NA","","#DIV/0!"))
+} else {
+  fread('https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv',
+        na.strings=c("NA","","#DIV/0!"))
+}
+```
+
+Data set is split into training and testing sets.
+
+```{r,echo=TRUE}
+buildIndex <- createDataPartition(dat.build$classe, p=0.8, list=FALSE)
+dat.train <- dat.build[ buildIndex, ]
+dat.test  <- dat.build[-buildIndex, ]
+```
+
+Variables with no relevance to prediction are removed.  Removed variables include row indicies, time/date of observation (but not specific time within a given excercise).
+
+```{r broadStrip,echo=TRUE}
+dat.train[,`:=`( V1=NULL, user_name=NULL, new_window=NULL, num_window=NULL,
+                 raw_timestamp_part_1=NULL, cvtd_timestamp=NULL )]
+dat.test[ ,`:=`( V1=NULL, user_name=NULL, new_window=NULL, num_window=NULL,
+                 raw_timestamp_part_1=NULL, cvtd_timestamp=NULL )]
+```
+
+Any character columns that can be converted to numeric are converted.  Columns with large quantities of 'NA' values increase the variance of a fitted model without neccessarily improving it's accuracy.  At the very least, columns with all 'NA' values are removed.  Removing columns with at least 50% 'NA' values reduces the risk of overfitting without sacrificing accuracy.
+
+Variables that provide summary statistics on the whole window of physical activity are a special case.  These variables are not readily available in a potential test set, thus are excluded to reduce risk of overfitting.
+
+```{r preciseStrip,echo=TRUE}
+datSize <- dim(dat.train)
+NAMES <- names(dat.train)
+
+thresholdNANs    <- 0
+thresholdNARatio <- 0.5
+
+for(NAME in NAMES){
+  # Recover numeric columns that were read as character
+  if(class(dat.train[[NAME]]) == "character") {
+    if(sum(!grepl('^(-)?([0-9]*)(\\.)?([0-9]+)$',dat.train[[NAME]]),na.rm=TRUE) == thresholdNANs) {
+      dat.train[[NAME]] <- as.numeric( dat.train[[NAME]] )
+      dat.test[[NAME]]  <- as.numeric( dat.test[[NAME]]  )
+    }
+  }
+  # Remove any columns with above threshold NA values
+  naRatio <- sum(is.na(dat.train[[NAME]])) / datSize[1]
+  if(naRatio > thresholdNARatio) {
+    dat.train[[NAME]] <- NULL
+    dat.test[[NAME]]  <- NULL
+  }
+}
+```
+
+Removing variables with near-zero variance further reduces overfitting without much negative consequence.
+
+```{r nearZeroVar,echo=TRUE,warning=FALSE}
+nzv.cols <- nearZeroVar(dat.train)
+dat.train[,(nzv.cols) := NULL]
+dat.test[,(nzv.cols) := NULL]
+```
+
+Confounding variables are identified by their mutually high correlations.
+
+```{r correlations,echo=TRUE}
+NAMES <- names(dat.train)
+datSize <- dim(dat.train)
+
+thresholdRR <- 0.95
+
+# Copy numeric/integer data.
+dat.num <- dat.train[,sapply(NAMES,function(NAME){
+  (class(dat.train[[NAME]])=='numeric' | class(dat.train[[NAME]])=='integer')
+}),with=FALSE]
+# Build matrices of the correlations between variables
+dat.cor <- cor(dat.num)
+# Print correlated pairs.
+names.cor <- names(dat.num)
+for(i in 1:dim(dat.cor)[1]){
+  for(j in 1:i){
+    if(dat.cor[i,j]^2 > thresholdRR & i!=j) {
+      print(paste(dat.cor[i,j]^2," for ",names.cor[i]," and ",names.cor[j]))
+    }
+  }
+}
+```
+
+###Modelling
+
+While generalized linear models or especially Fourier transformed models be used effectively, the reponse variable is a factor with 6 levels.  Testing shows 54 variables as predictors of 6 possible outcomes.  This is a an ideal case for trees, using conditional structures to ignore the large quantities of junk data.  To clarify each of the 6 outcomes should be identifiable by a subset range of values in a subset of predictors, and which predictors are most relevant may differ by outcome.  For A,B,C,D,E, 5 predictors may narrow possible outcomes to A,C, and D at which point, predictors relevant to distinguish C for A for example are not useful.  Rather than regress how much to discount the conditionally uneccessary predictors, it's more effective to consider the predictors conditionally with trees.  
+
+Within classification by trees, there are a number of existing <a href="http://topepo.github.io/caret/modelList.html">R-packages</a> that provide effective algorithms to use.  Boosting with trees is a natural choice, taking many weak predictors to create strong predictors but may consequently amplify noise.  Considering proper technique for an excercise via accelerometers makes noisy data an expectation.  Instead a random forest algorithm is used.  Though a random forest method is generally time consuming, the accuracy will be substantially higher than that of a single tree.  The 'e1071', 'randomForest' and 'foreach' packages can be used to apply random forest such that the trees are built in parallel; giving a very accurate algorithm for the computation time (faster than boosting in series).
+
+A brief note about cross-validation:  80% of the data is in the training set.  The 8-fold cross validation here uses 70% of the data (maintaining most complete subsets of data per user) and repeats 8 times leaving out (and testing on) a different 10% fold (1/8 of training set) each time.  The last 20% is held back for testing.
+
+For contrast, a classification & regression tree model is performed first.
+
+```{r treeClassCV,echo=TRUE}
+set.seed(98086)
+# Use a classification tree to predict variables
+modelRpart <- train( classe ~ ., data=dat.train, method='rpart',
+                     trControl=trainControl(method = "cv", number = 8) )
+modelRpart
+predictTest <- predict(modelRpart, newdata=dat.test)
+confusionMatrix(predictTest,reference=dat.test$classe)
+```
+
+Now the random forest.
+
+```{r randomForestCV8,echo=TRUE}
+set.seed(98086)
+# register cores/threads compute trees in parallel for the forest
+registerDoParallel()
+modelRF <- train( classe ~ ., data=dat.train, method='parRF',
+                  trControl=trainControl(method = "cv", number = 8) )
+modelRF
+```
+
+Applying the model to the test data.
+
+```{r confusionMatrix,echo=TRUE}
+predictTest <- predict(modelRF, newdata=dat.test)
+confusionMatrix(predictTest,reference=dat.test$classe)
+```
+
+This final model effectively predicts the quality of activity.
+
+```{r saveModel,echo=TRUE}
+# Save subsequent model
+saveRDS(modelRF,"QOA_model.rds")
+```
+
+###Package & System Information
+
+R version 3.2.3    data.table 1.9.6    knitr_1.12.3
+
+caret 6.0-64    randomForest 4.6-12    rpart 4.1-10
+
+doParallel 1.0.10    e1071 1.6-7    foreach 1.4.3
