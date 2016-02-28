@@ -4,7 +4,11 @@ February 25, 2016
 
 
 
+In summary, four sets of accelerometers/gyroscopes are attached to a subject's dumbell, forearm, arm and belt, as the subject lifts free weights (arm curls).  Data was collected on subjects performing the exercise properly under the supervision of a trainer (labelled "A"), and collected on the subjects performing the excercise with a highly common mistake in technique (labelled "B","C","D","E").  Here, statistical learning is applied to develope a model which can predict the quality of technique in the exercise.
+
 The data set has been generously provided by it's researchers.  More information on the data is available <a href="http://groupware.les.inf.puc-rio.br/har">here</a>.  
+
+A much more detailed explanation of the background, data gathering procedures and apparatus is detailed in the paper below.
 
 Velloso, E.; Bulling, A.; Gellersen, H.; Ugulino, W.; Fuks, H. <a href="http://groupware.les.inf.puc-rio.br/work.jsf?p1=11201">Qualitative Activity Recognition of Weight Lifting Exercises</a>. Proceedings of 4th International Conference in Cooperation with SIGCHI (Augmented Human '13) . Stuttgart, Germany: ACM SIGCHI, 2013. 
 
@@ -106,10 +110,10 @@ for(i in 1:dim(dat.cor)[1]){
 ```
 
 ```
-## [1] "0.962826316239155  for  total_accel_belt  and  roll_belt"
-## [1] "0.984098534719344  for  accel_belt_z  and  roll_belt"
-## [1] "0.951337986076654  for  accel_belt_z  and  total_accel_belt"
-## [1] "0.965878315458024  for  gyros_dumbbell_z  and  gyros_dumbbell_x"
+## [1] "0.962827672949323  for  total_accel_belt  and  roll_belt"
+## [1] "0.984013055139922  for  accel_belt_z  and  roll_belt"
+## [1] "0.951091569173788  for  accel_belt_z  and  total_accel_belt"
+## [1] "0.966317350096198  for  gyros_dumbbell_z  and  gyros_dumbbell_x"
 ```
 
 ###Modelling
@@ -143,13 +147,13 @@ modelRpart
 ## Summary of sample sizes: 13736, 13737, 13736, 13738, 13737, 13736, ... 
 ## Resampling results across tuning parameters:
 ## 
-##   cp          Accuracy   Kappa       Accuracy SD  Kappa SD  
-##   0.03658211  0.5036626  0.35156157  0.01465303   0.02000041
-##   0.06079217  0.4279789  0.22894762  0.06245878   0.10569359
-##   0.11473075  0.3329459  0.07413321  0.04034080   0.06161477
+##   cp         Accuracy   Kappa       Accuracy SD  Kappa SD  
+##   0.0352470  0.5049356  0.35332090  0.009175604  0.01241307
+##   0.0599911  0.4609978  0.28368225  0.063223968  0.10481583
+##   0.1153538  0.3229433  0.05883229  0.041226368  0.06292743
 ## 
 ## Accuracy was used to select the optimal model using  the largest value.
-## The final value used for the model was cp = 0.03658211.
+## The final value used for the model was cp = 0.035247.
 ```
 
 Now the random forest.
@@ -177,12 +181,12 @@ modelRF
 ## Resampling results across tuning parameters:
 ## 
 ##   mtry  Accuracy   Kappa      Accuracy SD  Kappa SD   
-##    2    0.9923564  0.9903303  0.001981756  0.002507446
-##   27    0.9919738  0.9898470  0.002259227  0.002857865
-##   53    0.9841389  0.9799340  0.003320188  0.004204078
+##    2    0.9936940  0.9920228  0.001609147  0.002035972
+##   27    0.9940760  0.9925059  0.001742833  0.002205528
+##   53    0.9864955  0.9829132  0.003958806  0.005012830
 ## 
 ## Accuracy was used to select the optimal model using  the largest value.
-## The final value used for the model was mtry = 2.
+## The final value used for the model was mtry = 27.
 ```
 
 Applying the model to the test data.
@@ -198,33 +202,33 @@ confusionMatrix(predictTest,reference=dat.test$classe)
 ## 
 ##           Reference
 ## Prediction    A    B    C    D    E
-##          A 1115    1    0    0    0
-##          B    1  755   12    0    0
-##          C    0    3  672   12    0
-##          D    0    0    0  629    0
-##          E    0    0    0    2  721
+##          A 1116    7    0    0    0
+##          B    0  751    3    0    0
+##          C    0    1  678    5    5
+##          D    0    0    3  638    4
+##          E    0    0    0    0  712
 ## 
 ## Overall Statistics
 ##                                           
-##                Accuracy : 0.9921          
-##                  95% CI : (0.9888, 0.9946)
+##                Accuracy : 0.9929          
+##                  95% CI : (0.9897, 0.9953)
 ##     No Information Rate : 0.2845          
 ##     P-Value [Acc > NIR] : < 2.2e-16       
 ##                                           
-##                   Kappa : 0.99            
+##                   Kappa : 0.991           
 ##  Mcnemar's Test P-Value : NA              
 ## 
 ## Statistics by Class:
 ## 
 ##                      Class: A Class: B Class: C Class: D Class: E
-## Sensitivity            0.9991   0.9947   0.9825   0.9782   1.0000
-## Specificity            0.9996   0.9959   0.9954   1.0000   0.9994
-## Pos Pred Value         0.9991   0.9831   0.9782   1.0000   0.9972
-## Neg Pred Value         0.9996   0.9987   0.9963   0.9957   1.0000
+## Sensitivity            1.0000   0.9895   0.9912   0.9922   0.9875
+## Specificity            0.9975   0.9991   0.9966   0.9979   1.0000
+## Pos Pred Value         0.9938   0.9960   0.9840   0.9891   1.0000
+## Neg Pred Value         1.0000   0.9975   0.9981   0.9985   0.9972
 ## Prevalence             0.2845   0.1935   0.1744   0.1639   0.1838
-## Detection Rate         0.2842   0.1925   0.1713   0.1603   0.1838
-## Detection Prevalence   0.2845   0.1958   0.1751   0.1603   0.1843
-## Balanced Accuracy      0.9994   0.9953   0.9889   0.9891   0.9997
+## Detection Rate         0.2845   0.1914   0.1728   0.1626   0.1815
+## Detection Prevalence   0.2863   0.1922   0.1756   0.1644   0.1815
+## Balanced Accuracy      0.9988   0.9943   0.9939   0.9950   0.9938
 ```
 
 This final model effectively predicts the quality of activity.

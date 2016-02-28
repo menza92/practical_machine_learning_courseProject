@@ -17,7 +17,11 @@ library(data.table)
 library(caret)
 ```
 
+In summary, four sets of accelerometers/gyroscopes are attached to a subject's dumbell, forearm, arm and belt, as the subject lifts free weights (arm curls).  Data was collected on subjects performing the exercise properly under the supervision of a trainer (labelled "A"), and collected on the subjects performing the excercise with a highly common mistake in technique (labelled "B","C","D","E").  Here, statistical learning is applied to develope a model which can predict the quality of technique in the exercise.
+
 The data set has been generously provided by it's researchers.  More information on the data is available <a href="http://groupware.les.inf.puc-rio.br/har">here</a>.  
+
+A much more detailed explanation of the background, data gathering procedures and apparatus is detailed in the paper below.
 
 Velloso, E.; Bulling, A.; Gellersen, H.; Ugulino, W.; Fuks, H. <a href="http://groupware.les.inf.puc-rio.br/work.jsf?p1=11201">Qualitative Activity Recognition of Weight Lifting Exercises</a>. Proceedings of 4th International Conference in Cooperation with SIGCHI (Augmented Human '13) . Stuttgart, Germany: ACM SIGCHI, 2013. 
 
