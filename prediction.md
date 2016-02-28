@@ -106,10 +106,10 @@ for(i in 1:dim(dat.cor)[1]){
 ```
 
 ```
-## [1] "0.962459545968892  for  total_accel_belt  and  roll_belt"
-## [1] "0.984201635962184  for  accel_belt_z  and  roll_belt"
-## [1] "0.951077849852308  for  accel_belt_z  and  total_accel_belt"
-## [1] "0.96580483278299  for  gyros_dumbbell_z  and  gyros_dumbbell_x"
+## [1] "0.962826316239155  for  total_accel_belt  and  roll_belt"
+## [1] "0.984098534719344  for  accel_belt_z  and  roll_belt"
+## [1] "0.951337986076654  for  accel_belt_z  and  total_accel_belt"
+## [1] "0.965878315458024  for  gyros_dumbbell_z  and  gyros_dumbbell_x"
 ```
 
 ###Modelling
@@ -144,51 +144,12 @@ modelRpart
 ## Resampling results across tuning parameters:
 ## 
 ##   cp          Accuracy   Kappa       Accuracy SD  Kappa SD  
-##   0.03515799  0.5037908  0.35152221  0.009468181  0.01276356
-##   0.05889334  0.4428867  0.25376458  0.063388511  0.10690858
-##   0.11535381  0.3236438  0.05985475  0.041956065  0.06399614
+##   0.03658211  0.5036626  0.35156157  0.01465303   0.02000041
+##   0.06079217  0.4279789  0.22894762  0.06245878   0.10569359
+##   0.11473075  0.3329459  0.07413321  0.04034080   0.06161477
 ## 
 ## Accuracy was used to select the optimal model using  the largest value.
-## The final value used for the model was cp = 0.03515799.
-```
-
-```r
-predictTest <- predict(modelRpart, newdata=dat.test)
-confusionMatrix(predictTest,reference=dat.test$classe)
-```
-
-```
-## Confusion Matrix and Statistics
-## 
-##           Reference
-## Prediction    A    B    C    D    E
-##          A 1025  322  280  284   97
-##          B   20  254   25  119  114
-##          C   67  183  379  240  185
-##          D    0    0    0    0    0
-##          E    4    0    0    0  325
-## 
-## Overall Statistics
-##                                           
-##                Accuracy : 0.5055          
-##                  95% CI : (0.4897, 0.5212)
-##     No Information Rate : 0.2845          
-##     P-Value [Acc > NIR] : < 2.2e-16       
-##                                           
-##                   Kappa : 0.3543          
-##  Mcnemar's Test P-Value : NA              
-## 
-## Statistics by Class:
-## 
-##                      Class: A Class: B Class: C Class: D Class: E
-## Sensitivity            0.9185  0.33465  0.55409   0.0000  0.45076
-## Specificity            0.6498  0.91214  0.79160   1.0000  0.99875
-## Pos Pred Value         0.5105  0.47744  0.35958      NaN  0.98784
-## Neg Pred Value         0.9525  0.85108  0.89369   0.8361  0.88982
-## Prevalence             0.2845  0.19347  0.17436   0.1639  0.18379
-## Detection Rate         0.2613  0.06475  0.09661   0.0000  0.08284
-## Detection Prevalence   0.5119  0.13561  0.26867   0.0000  0.08386
-## Balanced Accuracy      0.7841  0.62339  0.67285   0.5000  0.72476
+## The final value used for the model was cp = 0.03658211.
 ```
 
 Now the random forest.
@@ -216,12 +177,12 @@ modelRF
 ## Resampling results across tuning parameters:
 ## 
 ##   mtry  Accuracy   Kappa      Accuracy SD  Kappa SD   
-##    2    0.9935665  0.9918616  0.002194282  0.002775976
-##   27    0.9936300  0.9919417  0.002358851  0.002984635
-##   53    0.9867509  0.9832389  0.003549753  0.004491897
+##    2    0.9923564  0.9903303  0.001981756  0.002507446
+##   27    0.9919738  0.9898470  0.002259227  0.002857865
+##   53    0.9841389  0.9799340  0.003320188  0.004204078
 ## 
 ## Accuracy was used to select the optimal model using  the largest value.
-## The final value used for the model was mtry = 27.
+## The final value used for the model was mtry = 2.
 ```
 
 Applying the model to the test data.
@@ -237,33 +198,33 @@ confusionMatrix(predictTest,reference=dat.test$classe)
 ## 
 ##           Reference
 ## Prediction    A    B    C    D    E
-##          A 1116    3    0    0    0
-##          B    0  754    3    0    0
-##          C    0    1  679    4    0
-##          D    0    1    2  639    0
-##          E    0    0    0    0  721
+##          A 1115    1    0    0    0
+##          B    1  755   12    0    0
+##          C    0    3  672   12    0
+##          D    0    0    0  629    0
+##          E    0    0    0    2  721
 ## 
 ## Overall Statistics
-##                                         
-##                Accuracy : 0.9964        
-##                  95% CI : (0.994, 0.998)
-##     No Information Rate : 0.2845        
-##     P-Value [Acc > NIR] : < 2.2e-16     
-##                                         
-##                   Kappa : 0.9955        
-##  Mcnemar's Test P-Value : NA            
+##                                           
+##                Accuracy : 0.9921          
+##                  95% CI : (0.9888, 0.9946)
+##     No Information Rate : 0.2845          
+##     P-Value [Acc > NIR] : < 2.2e-16       
+##                                           
+##                   Kappa : 0.99            
+##  Mcnemar's Test P-Value : NA              
 ## 
 ## Statistics by Class:
 ## 
 ##                      Class: A Class: B Class: C Class: D Class: E
-## Sensitivity            1.0000   0.9934   0.9927   0.9938   1.0000
-## Specificity            0.9989   0.9991   0.9985   0.9991   1.0000
-## Pos Pred Value         0.9973   0.9960   0.9927   0.9953   1.0000
-## Neg Pred Value         1.0000   0.9984   0.9985   0.9988   1.0000
+## Sensitivity            0.9991   0.9947   0.9825   0.9782   1.0000
+## Specificity            0.9996   0.9959   0.9954   1.0000   0.9994
+## Pos Pred Value         0.9991   0.9831   0.9782   1.0000   0.9972
+## Neg Pred Value         0.9996   0.9987   0.9963   0.9957   1.0000
 ## Prevalence             0.2845   0.1935   0.1744   0.1639   0.1838
-## Detection Rate         0.2845   0.1922   0.1731   0.1629   0.1838
-## Detection Prevalence   0.2852   0.1930   0.1744   0.1637   0.1838
-## Balanced Accuracy      0.9995   0.9962   0.9956   0.9964   1.0000
+## Detection Rate         0.2842   0.1925   0.1713   0.1603   0.1838
+## Detection Prevalence   0.2845   0.1958   0.1751   0.1603   0.1843
+## Balanced Accuracy      0.9994   0.9953   0.9889   0.9891   0.9997
 ```
 
 This final model effectively predicts the quality of activity.

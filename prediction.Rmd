@@ -128,8 +128,6 @@ set.seed(98086)
 modelRpart <- train( classe ~ ., data=dat.train, method='rpart',
                      trControl=trainControl(method = "cv", number = 8) )
 modelRpart
-predictTest <- predict(modelRpart, newdata=dat.test)
-confusionMatrix(predictTest,reference=dat.test$classe)
 ```
 
 Now the random forest.
